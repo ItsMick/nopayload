@@ -6,9 +6,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,12 +36,13 @@ import subprocess
 import shutil
 import uuid
 
+
 def main():
     p = optparse.OptionParser(usage="\nminimum: nopayload --script <filename>\nnopayload --script <filename> --packagename <name> --version <version number> --myorg <org name>")
-    p.add_option('--packagename','-p', default="", help="Define a output package name. Not Required  ex. my_great.py")
-    p.add_option('--script','-s', default="", help="Script file you would like to package. Required ex. my_great.py" )
-    p.add_option('--version','-v', default="1.0", help="Set package version #Not Required ex. my_great.py")
-    p.add_option('--myorg','-o', default="", help="Set Organzation name this is used as a prefix Not Required ex. PretendCo" )
+    p.add_option('--packagename', '-p', default="", help="Define a output package name. Not Required  ex. my_great.py")
+    p.add_option('--script', '-s', default="", help="Script file you would like to package. Required ex. my_great.py")
+    p.add_option('--version', '-v', default="1.0", help="Set package version #Not Required ex. my_great.py")
+    p.add_option('--myorg', '-o', default="", help="Set Organzation name this is used as a prefix Not Required ex. PretendCo")
     options, arguments = p.parse_args()
 
     if not options.script:
@@ -73,12 +74,12 @@ def main():
     if not options.myorg:
         identifier = "com." + packagename + "." + options.version
     else:
-        identifier = "com." + options.myorg + "." +  packagename + "." + options.version
+        identifier = "com." + options.myorg + "." + packagename + "." + options.version
 
     # Lets make the args for the subprocess
     pkgbuild_args = ["/usr/bin/pkgbuild", "--nopayload", "--scripts", scripts_folder, "--version", options.version, "--identifier", identifier, output_package]
     #Go Time
-    subprocess.call(pkgbuild_args, stdin=None, stdout=None, stderr=None, shell=False )
+    subprocess.call(pkgbuild_args, stdin=None, stdout=None, stderr=None, shell=False)
 
 if __name__ == '__main__':
     main()
