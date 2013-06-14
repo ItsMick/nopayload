@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+# encoding: utf-8
+#
+# Copyright 2013 Mick Zimmerman.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#      http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+
+This tool assists with creating nopayload Packages with /usr/bin/pkgbuild.
+The only required variable is --script.
+
+TODO:
+
+
+2. Add a forced reciepts option to options
+3. Consider expanding funtionality for creation of metapkg's
+
+Chanage log
+-Moved the ./scripts folder creation to /tmp/{uuid}
+-Updated the logic when setting packagename if --packagename was not passed
+
+"""
+import optparse
+import os
+import subprocess
+import shutil
+import uuid
+
+def main():
+    p = optparse.OptionParser(usage="\nminimum: nopayload --script <filename>\nnopayload --script <filename> --packagename <name> --version <version number> --myorg <org name>")
+    p.add_option('--packagename','-p', default="", help="Define a output package name. Not Required  ex. my_great.py")
+    p.add_option('--script','-s', default="", help="Script file you would like to package. Required ex. my_great.py" )
+    p.add_option('--version','-v', default="1.0", help="Set package version #Not Required ex. my_great.py")
+    p.add_option('--myorg','-o', default="", help="Set Organzation name this is used as a prefix Not Required ex. PretendCo" )
+    options, arguments = p.parse_args()
+
+    if not options.script:
+        p.error("Please read the help info. {nopayload -h}")
+    #make the scripts folder
+    scripts_folder = "/tmp/" + str(uuid.uuid4())
+    if not os.path.exists(scripts_folder):
+        os.makedirs(scripts_folder)
+
+    #copy and rename script into the newly created scripts folder
+    postinstall = scripts_folder + "/postinstall"
+    shutil.copy2(options.script, postinstall)
+
+    # set the packagname in the case that no package name was passed
+    #   updated to account of ./ or the full path being passed.
+    #   we should not see anymore _1.0.pkg being created
+    if not options.packagename:
+        packagename = options.script.split("/")
+        packagename = packagename[len(packagename) - 1]
+        packagename = packagename.split(".")[0]
+
+    #build the name for the pkg """"side note I like how "_" is a emoticon""""
+    if not options.myorg:
+        output_package = packagename + "_" + options.version + ".pkg"
+    else:
+        output_package = options.myorg + "_" + packagename + "_" + options.version + ".pkg"
+
+    # Set identifier
+    if not options.myorg:
+        identifier = "com." + packagename + "." + options.version
+    else:
+        identifier = "com." + options.myorg + "." +  packagename + "." + options.version
+
+    # Lets make the args for the subprocess
+    pkgbuild_args = ["/usr/bin/pkgbuild", "--nopayload", "--scripts", scripts_folder, "--version", options.version, "--identifier", identifier, output_package]
+    #Go Time
+    subprocess.call(pkgbuild_args, stdin=None, stdout=None, stderr=None, shell=False )
+
+if __name__ == '__main__':
+    main()
