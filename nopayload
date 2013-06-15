@@ -19,13 +19,23 @@
 This tool assists with creating nopayload Packages with /usr/bin/pkgbuild.
 The only required variable is --script.
 
-TODO:
+TO DO:
 
 
-2. Add a forced reciepts option to options
-3. Consider expanding funtionality for creation of metapkg's
+-- Add a forced reciepts option to options
+-- Consider expanding funtionality for creation of metapkg's
+-- Dev ID add_option
+-- Added forced reciepts
 
-Chanage log
+Chanage log:
+
+6/15/2013
+-updated options
+-changed the way packagname works now will ignore
+-update help and usage
+-
+
+6/14/2013
 -Moved the ./scripts folder creation to /tmp/{uuid}
 -Updated the logic when setting packagename if --packagename was not passed
 
@@ -36,23 +46,38 @@ import subprocess
 import shutil
 import uuid
 
+usage = "\nUsage nopayload --script filename [--packagename value] [--version value] [--myorg value]"
+
 
 def main():
-    p = optparse.OptionParser(usage="\nminimum: nopayload --script <filename>\nnopayload --script <filename> --packagename <name> --version <version number> --myorg <org name>")
-    p.add_option('--packagename', '-p', default="", help="Define a output package name. Not Required  ex. my_great.py")
-    p.add_option('--script', '-s', default="", help="Script file you would like to package. Required ex. my_great.py")
-    p.add_option('--version', '-v', default="1.0", help="Set package version #Not Required ex. my_great.py")
+    p = optparse.OptionParser(usage=usage)
+    p.add_option('--script', '-s', default="", help="Script you would like wrapped into a flat package. Required ex. my_great.py")
+    p.add_option('--packagename', '-p', default="", help="Define a output package name. Not Required ")
+    p.add_option('--version', '-v', default="1.0", help="Set package version #Not Required")
     p.add_option('--myorg', '-o', default="", help="Set Organzation name this is used as a prefix Not Required ex. PretendCo")
+    p.add_option('--forcedreciepts', '-f', action="store_true", default="", help="Force reciepts to be created. This is achieved by writing a file to /var/db/reciepts. This makes the package technically not a nopayload package.")
     options, arguments = p.parse_args()
 
+    #Bail out if no script was passed or quit els
     if not options.script:
         p.error("Please read the help info. {nopayload -h}")
-    #make the scripts folder
-    scripts_folder = "/tmp/" + str(uuid.uuid4())
+    else:
+        script = options.script.split("/")
+        script = script[len(script) - 1]
+        script = script.split(".")[0]
+
+    #set tmp folder
+    tmp_folder = "/tmp/" + str(uuid.uuid4())
+    #set scripts folder
+    scripts_folder = tmp_folder + "/scripts"
+    # create tmp folder
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
+    #create scripts folder
     if not os.path.exists(scripts_folder):
         os.makedirs(scripts_folder)
 
-    #copy and rename script into the newly created scripts folder
+    # Copy and rename script into the newly created scripts folder.
     postinstall = scripts_folder + "/postinstall"
     shutil.copy2(options.script, postinstall)
 
@@ -60,26 +85,46 @@ def main():
     #   updated to account for ./ or the full path being passed.
     #   we should not see anymore _1.0.pkg being created
     if not options.packagename:
-        packagename = options.script.split("/")
-        packagename = packagename[len(packagename) - 1]
-        packagename = packagename.split(".")[0]
-
-    #build the name for the pkg """"side note I like how "_" is an emoticon""""
-    if not options.myorg:
-        output_package = packagename + "_" + options.version + ".pkg"
+        if not options.myorg:
+            packagename = script + "_" + options.version + ".pkg"
+        else:
+            packagename = options.myorg + "_" + script + "_" + options.version + ".pkg"
     else:
-        output_package = options.myorg + "_" + packagename + "_" + options.version + ".pkg"
+        check_packagename = options.packagname.split(".")
+        check_packagename = check_packagename[len(check_packagename) - 1]
+        if check_packagename is not "pkg" or "PKG":
+            packagename = options.packagname + ".pkg"
 
     # Set identifier
     if not options.myorg:
-        identifier = "com." + packagename + "." + options.version
+        identifier = "com." + script + "." + options.version
     else:
-        identifier = "com." + options.myorg + "." + packagename + "." + options.version
+        identifier = "com." + options.myorg + "." + script + "." + options.version
 
-    # Lets make the args for the subprocess
-    pkgbuild_args = ["/usr/bin/pkgbuild", "--nopayload", "--scripts", scripts_folder, "--version", options.version, "--identifier", identifier, output_package]
-    #Go Time
+    #Forced Reciepts
+    if not options.forcedreciepts:
+        pass
+    else:
+        root_folder = tmp_folder + "/root"
+        reciepts_folder = root_folder + "/var/db/reciepts"
+        if not os.path.exists(reciepts_folder):
+            os.makedirs(reciepts_folder)
+        #blankfile = reciepts + "/" + identifier
+        #open(blankfile, w)
+        #blankfile.write(identifier)
+        #blankfile(close)
+
+    #set up the list for the subprocess.call()
+    if not options.forcedreciepts:
+        pkgbuild_args = ["/usr/bin/pkgbuild", "--nopayload", "--scripts", scripts_folder, "--version", options.version, "--identifier", identifier, packagename]
+    else:
+        pkgbuild_args = ["/usr/bin/pkgbuild", "--root", root_folder, "--scripts", scripts_folder, "--version", options.version, "--identifier", identifier, packagename]
+
+    #Run the arguments
     subprocess.call(pkgbuild_args, stdin=None, stdout=None, stderr=None, shell=False)
+
+    #Clean up - Delete the temp folder that was created
+    shutil.rmtree(scripts_folder)
 
 if __name__ == '__main__':
     main()
