@@ -31,9 +31,8 @@ Chanage log:
 
 6/15/2013
 -updated options
--changed the way packagname works now will ignore
+-changed the way packagename works
 -update help and usage
--
 
 6/14/2013
 -Moved the ./scripts folder creation to /tmp/{uuid}
@@ -90,10 +89,14 @@ def main():
         else:
             packagename = options.myorg + "_" + script + "_" + options.version + ".pkg"
     else:
-        check_packagename = options.packagname.split(".")
+        check_packagename = options.packagename.split(".")
         check_packagename = check_packagename[len(check_packagename) - 1]
-        if check_packagename is not "pkg" or "PKG":
-            packagename = options.packagname + ".pkg"
+        print check_packagename
+        print type(check_packagename)
+        if check_packagename == "pkg" or "mpkg":
+            packagename = options.packagename
+        else:
+            packagename = options.packagename + ".pkg"
 
     # Set identifier
     if not options.myorg:
