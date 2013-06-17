@@ -45,7 +45,7 @@ import subprocess
 import shutil
 import uuid
 
-usage = "\nUsage nopayload --script filename [--packagename value] [--version value] [--myorg value]"
+usage = "\nUsage nopayload --script filename [--packagename value] [--version value] [--myorg value] [--forcedreciepts]"
 
 
 def main():
@@ -70,19 +70,15 @@ def main():
     #set scripts folder
     scripts_folder = tmp_folder + "/scripts"
     # create tmp folder
-    if not os.path.exists(tmp_folder):
-        os.makedirs(tmp_folder)
+    mz_makedirs(tmp_folder)
     #create scripts folder
-    if not os.path.exists(scripts_folder):
-        os.makedirs(scripts_folder)
+    mz_makedirs(scripts_folder)
 
     # Copy and rename script into the newly created scripts folder.
     postinstall = scripts_folder + "/postinstall"
     shutil.copy2(options.script, postinstall)
 
     # set the packagname in the case that no package name was passed
-    #   updated to account for ./ or the full path being passed.
-    #   we should not see anymore _1.0.pkg being created
     if not options.packagename:
         if not options.myorg:
             packagename = script + "_" + options.version + ".pkg"
@@ -91,8 +87,6 @@ def main():
     else:
         check_packagename = options.packagename.split(".")
         check_packagename = check_packagename[len(check_packagename) - 1]
-        print check_packagename
-        print type(check_packagename)
         if check_packagename == "pkg" or "mpkg":
             packagename = options.packagename
         else:
@@ -110,8 +104,7 @@ def main():
     else:
         root_folder = tmp_folder + "/root"
         reciepts_folder = root_folder + "/var/db/reciepts"
-        if not os.path.exists(reciepts_folder):
-            os.makedirs(reciepts_folder)
+        mz_makedirs(reciepts_folder)
         #blankfile = reciepts + "/" + identifier
         #open(blankfile, w)
         #blankfile.write(identifier)
@@ -128,6 +121,11 @@ def main():
 
     #Clean up - Delete the temp folder that was created
     shutil.rmtree(scripts_folder)
+
+def mz_makedirs(self):
+    """os.makedirs with logic"""
+    if not os.path.exists(self):
+        os.makedirs(self)
 
 if __name__ == '__main__':
     main()
