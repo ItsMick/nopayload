@@ -77,6 +77,9 @@ def main():
     # Copy and rename script into the newly created scripts folder.
     postinstall = scripts_folder + "/postinstall"
     shutil.copy2(options.script, postinstall)
+    # Added a chmod +x incase the script is not excutable -- This will be moved to os.fchmod()
+    chmod_args=["/bin/chmod", "+x", postinstall]
+    subprocess.call(chmod_args, stdin=None, stdout=None, stderr=None, shell=False)
 
     # set the packagname in the case that no package name was passed
     if not options.packagename:
